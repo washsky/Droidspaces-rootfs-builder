@@ -24,9 +24,7 @@ jobs:
           run: |
             chmod +x build_rootfs-native.sh
       
-            ./build_rootfs-native.sh \
-              -i Redroid-15.Dockerfile \
-              -v "${{ steps.buildinfo.outputs.build_id }}"
+            #./build_rootfs-native.sh    -i Redroid-15.Dockerfile  -v "${{ steps.buildinfo.outputs.build_id }}"
 
             ./build_rootfs-native.sh \
               -i Redroid-15-2.Dockerfile \
