@@ -1,63 +1,60 @@
-name: Build Single Droidspaces RootFS
+name: Build Droidspaces RootFS
 
 on:
-workflow_dispatch:
-inputs:
-template:
-description: "RootFS Template"
-required: true
-default: "Arch-Minimal-Kernel-5.10-and-up"
-type: choice
-options:
-- Arch-Minimal-Kernel-5.10-and-up
-- Arch-base-Kernel-5.10-and-up
-- Alpine-Minimal
-- Alpine-base
-- Debian-13-Minimal
-- Debian-13-base
-- Debian-13-XFCE
-- Ubuntu-24.04-Minimal
-- Ubuntu-24.04-base
-- Ubuntu-24.04-XFCE
-- Ubuntu-22.04-Minimal
-- Ubuntu-22.04-base
-- AzureLinux-3.0-Minimal
+  workflow_dispatch:
+    inputs:
+      template:
+        description: "RootFS Template"
+        required: true
+        default: "Arch-Minimal-Kernel-5.10-and-up"
+        type: choice
+        options:
+          - Arch-Minimal-Kernel-5.10-and-up
+          - Arch-base-Kernel-5.10-and-up
+          - Alpine-Minimal
+          - Alpine-base
+          - Debian-13-Minimal
+          - Debian-13-base
+          - Debian-13-XFCE
+          - Ubuntu-22.04-Minimal
+          - Ubuntu-22.04-base
+          - Ubuntu-24.04-Minimal
+          - Ubuntu-24.04-base
+          - Ubuntu-24.04-XFCE
+          - AzureLinux-3.0-Minimal
 
 jobs:
-build:
-runs-on: ubuntu-24.04-arm
+  build:
+    runs-on: ubuntu-24.04-arm
 
-```
-steps:
-  - name: Checkout
-    uses: actions/checkout@v4
+    permissions:
+      contents: write
 
-  - name: Generate Build ID
-    id: meta
-    run: |
-      echo "BUILD_ID=v$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  - name: Build RootFS
-    run: |
-      chmod +x build_rootfs-native.sh
+      - name: Generate Build ID
+        id: buildinfo
+        run: |
+          BUILD_ID="v$(date +'%Y%m%d-%H%M%S')"
+          echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
 
-      ./build_rootfs-native.sh \
-        -i "${{ github.event.inputs.template }}.Dockerfile" \
-        -v "${BUILD_ID}"
+      - name: Build RootFS
+        run: |
+          chmod +x build_rootfs-native.sh
 
-  - name: Upload Artifact
-    uses: actions/upload-artifact@v4
-    with:
-      name: rootfs
-      path: "*.tar.xz"
+          ./build_rootfs-native.sh \
+            -i "${{ github.event.inputs.template }}.Dockerfile" \
+            -v "${{ steps.buildinfo.outputs.build_id }}"
 
-  - name: Create Release
-    uses: softprops/action-gh-release@v2
-    with:
-      tag_name: ${{ env.BUILD_ID }}
-      name: Droidspaces RootFS ${{ env.BUILD_ID }}
-      files: "*.tar.xz"
-      generate_release_notes: true
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.buildinfo.outputs.build_id }}
+          name: "${{ github.event.inputs.template }} RootFS"
+          files: "*.tar.xz"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
