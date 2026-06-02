@@ -27,6 +27,10 @@ jobs:
             ./build_rootfs-native.sh \
               -i Redroid-15.Dockerfile \
               -v "${{ steps.buildinfo.outputs.build_id }}"
+
+            ./build_rootfs-native.sh \
+              -i Redroid-15-2.Dockerfile \
+              -v "${{ steps.buildinfo.outputs.build_id }}"
       
         - name: Create Release
           uses: softprops/action-gh-release@v2
