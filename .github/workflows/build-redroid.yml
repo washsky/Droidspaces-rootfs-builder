@@ -1,0 +1,40 @@
+name: Build Redroid RootFS
+  
+on:
+  workflow_dispatch:
+  
+jobs:
+    build:
+      runs-on: ubuntu-24.04-arm
+      
+      
+      permissions:
+        contents: write
+      
+      steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v4
+      
+        - name: Generate Build ID
+          id: buildinfo
+          run: |
+            echo "build_id=v$(date +'%Y%m%d-%H%M%S')" >> "$GITHUB_OUTPUT"
+      
+        - name: Build RootFS
+          run: |
+            chmod +x build_rootfs-native.sh
+      
+            ./build_rootfs-native.sh \
+              -i Redroid-15.Dockerfile \
+              -v "${{ steps.buildinfo.outputs.build_id }}"
+      
+        - name: Create Release
+          uses: softprops/action-gh-release@v2
+          with:
+            tag_name: redroid-${{ steps.buildinfo.outputs.build_id }}
+            name: Redroid 15 Droidspaces RootFS
+            files: "*.tar.xz"
+      
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
