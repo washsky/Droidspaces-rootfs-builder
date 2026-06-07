@@ -86,10 +86,21 @@ def main():
             except Exception as e:
                 print(f"Error parsing date {date_str} for tag {tag_name}: {e}")
         
-        print(f"Found {len(tags_to_delete)} tags older than 7 days.")
+        # Fetch the latest release tag so we never delete it
+        latest_tag = None
+        latest_res = run_command(["gh", "release", "view", "--repo", repo, "--json", "tagName"])
+        if latest_res.returncode == 0:
+            try:
+                latest_tag = json.loads(latest_res.stdout).get("tagName")
+                print(f"Latest release tag (protected): {latest_tag}")
+            except Exception:
+                pass
+
+        tags_to_delete = [(t, d, a) for t, d, a in tags_to_delete if t != latest_tag]
+        print(f"Found {len(tags_to_delete)} tags older than 7 days (latest release protected).")
         deleted_releases = 0
         deleted_tags = 0
-        
+
         for tag, date_str, days in tags_to_delete:
             print(f"Nuking tag/release {tag} (created {date_str}, age: {days} days)")
             

@@ -108,6 +108,13 @@ RUN apt-get update && \
     nilfs-tools \
     udftools \
     f2fs-tools \
+    # Audio
+    pulseaudio \
+    pulseaudio-utils \
+    pavucontrol \
+    # VirGL guest drivers (for virglrenderer_android)
+    libgl1-mesa-dri \
+    mesa-vulkan-drivers \
     # XFCE Desktop Environment and essential tools
     xfce4 \
     desktop-base \
@@ -313,6 +320,30 @@ fi
 # Mark fixes as completed
 echo "Post-extraction fixes applied on $(date)" > /etc/droidspaces
 EOF_RUN
+
+# Install and enable XFCE autostart service
+COPY scripts/xfce-start /usr/local/bin/xfce-start
+RUN chmod +x /usr/local/bin/xfce-start
+
+RUN cat > /etc/systemd/system/xfce-autostart.service << 'EOF'
+[Unit]
+Description=XFCE Autostart
+After=graphical.target
+
+[Service]
+Type=simple
+User=root
+ExecCondition=/bin/sh -c "grep -q 'enable_termux_x11=1' /run/droidspaces/container.config"
+ExecStart=/usr/local/bin/xfce-start
+Restart=on-failure
+
+[Install]
+WantedBy=graphical.target
+EOF
+
+RUN chmod 644 /etc/systemd/system/xfce-autostart.service && \
+    mkdir -p /etc/systemd/system/graphical.target.wants && \
+    ln -sf /etc/systemd/system/xfce-autostart.service /etc/systemd/system/graphical.target.wants/xfce-autostart.service
 
 # Update icon and font caches in a final setup layer
 RUN gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true && \
